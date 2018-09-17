@@ -1,5 +1,4 @@
 # DCOS Toolkit
 
-## Everything related to mesos are listed here.
-
-1. [Mesos](mesos/README.md)
+1. [Scripts](scripts/README.md)
+2. [Mesos](mesos/README.md)

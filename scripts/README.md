@@ -79,3 +79,19 @@ Please input any one operation from : [ help addAWSKey agentsDetails publicIP sa
        - Run user command on all dcos master nodes
        - Usage : `bash dcosUtil.sh runOnAllMasters "<command to run, ex systemctl status filebeat.service>"`
 ```
+
+[addNodeAttributes.sh](addNodeAttributes.sh)
+
+```bash
+# Usage : 
+$ addNodeAttributes.sh <; separated key:value pairs as node attributes> <File path where each node IP per line to add attributes>
+# Example : 
+$ addNodeAttributes.sh <key1>:<value1>;<key2>:<value2> /path/to/nodes/ip/file
+
+$ addNodeAttributes.sh "SERVER_TYPE:DB;DB_TYPE:POSTGRES" "/tmp/POSTGRES_NDOES.txt"
+
+$ cat /tmp/POSTGRES_NDOES.txt
+10.0.0.1
+10.0.0.2
+10.0.0.3
+```
