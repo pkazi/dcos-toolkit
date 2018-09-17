@@ -1,4 +1,4 @@
-# DC/OS Add node Attributes
+# DCOS Toolkit - Mesos - Add node Attributes
 
 - To use marathon constraints, we can specify attributes to every mesos node.
 - Attributes are defined in key:value pairs and node can have multiple attributes.
