@@ -130,43 +130,47 @@ EOF
 
 function agentsDetails
 {
-        type=${$1:-all}
-        if [[ $type != "all" ]]; then
+        type=${1:-"all"}
+        if [[ "$type" == "all" ]]; then
                 HeaderBox "Private and Public Agents Details"
                 dcos node --json |  jq '.[] | select(.type | contains("agent")) | if (.attributes.public_ip != null) then "Public Agent  : " else "Private Agent : " end + .id + " - " + .hostname ' -r | sort
-        elif [[ $type != "private" ]]; then
+        elif [[ "$type" == "private" ]]; then
                 HeaderBox "Private Agents Details"
                 dcos node --json |  jq '.[] | select(.type | contains("agent")) | select(.attributes.public_ip == null) | "Private Agent : " + .id + " - " + .hostname ' -r
-        elif [[ $type != "public" ]]; then
+        elif [[ "$type" == "public" ]]; then
                 HeaderBox "Public Agents Details"
                 dcos node --json |  jq '.[] | select(.type | contains("agent")) | select(.attributes.public_ip != null) | "Public Agent : " + .id + " - " + .hostname ' -r
+        else
+                echo "Wrong usage, valid parameters are all, private, public"
         fi
 }
 
 function publicIP
 {
-        type=${$1:-public}
+        type=${1:-public}
 
-        if [[ $type != "public" ]]; then
+        if [[ $type == "public" ]]; then
                 HeaderBox "Public IP of Public Agents"
-                for ip in $(dcos node --json | jq '.[] | select(.attributes.public_ip == "true") | .ip' -r); 
+                for ip in $(dcos node --json | jq '.[] | select(.attributes.public_ip == "true") | .hostname' -r); 
                 do
                         echo "Private IP : $ip"
-                        echo "Public IP : $(dcos node ssh --option StrictHostKeyChecking=no --option LogLevel=quiet --master-proxy --private-ip=$id "curl -s ifconfig.co")"
+                        echo "Public IP : $(dcos node ssh --option StrictHostKeyChecking=no --option LogLevel=quiet --master-proxy --private-ip=$ip "curl -s ifconfig.co")"
+                        echo "=========================="
                 done 2>/dev/null
-        elif [[ $type != "master" ]]; then
+        elif [[ $type == "master" ]]; then
                 HeaderBox "Public IP of All Masters"
                 for ip in $(dcos node --json |  jq '.[] | select(.type | contains("master")) | .ip' -r); 
                 do 
                         echo "Private IP : $ip"
                         echo "Public IP : $(dcos node ssh --option StrictHostKeyChecking=no --option LogLevel=quiet --master-proxy --private-ip=$ip "curl -s ifconfig.co")"
+                        echo "=========================="
                 done 2>/dev/null
-        elif [[ $type != "leader" ]]; then
+        elif [[ $type == "leader" ]]; then
                 HeaderBox "Public IP of Master Leader"
                 leaderPrIP=$(dcos node --json |  jq '.[] | select(.type | contains("leader")) | .ip' -r)
                 dcos node ssh --option StrictHostKeyChecking=no --option LogLevel=quiet --master-proxy --leader "curl -s ifconfig.co" 2>/dev/null
         else
-                echo "Wrong Choice. Select from public / master / leader"
+                echo "Wrong Choice. Select from public , master , leader"
         fi
 }
 
@@ -218,19 +222,19 @@ function appsReport
         sed -i "s|^/||g" $TMP_CSV_FILE
         sort -t "," -k2,2 -k3,3 -k1,1 $TMP_CSV_FILE > ${TMP_CSV_FILE_SORT}
         cnt=1
-        printf '%.0s=' {1..150}
-        printf "\n  %-5s%-35s%-23s%-40s%-20s\n" "No" "Application Name" "Container Type" "Docker Image" "Tag / Version"
-        printf '%.0s=' {1..150}
+        printf '%.0s=' {1..170}
+        printf "\n  %-5s%-55s%-23s%-40s%-20s\n" "No" "Application Name" "Container Type" "Docker Image" "Tag / Version"
+        printf '%.0s=' {1..170}
         while IFS=, read -r app typ image; 
         do
                 tag=`echo $image | awk -F':' -v im="$image" '{tag=(im=="[ CMD ]")?"NA":($2=="")?"latest":$2; print tag}'`
                 image=`echo $image | awk -F':' '{print $1}'`
-                printf "\n  %-5s%-35s%-23s%-40s%-20s" "$cnt" "$app" "$typ" "$image" "$tag"
+                printf "\n  %-5s%-55s%-23s%-40s%-20s" "$cnt" "$app" "$typ" "$image" "$tag"
                 cnt=$((cnt + 1))
                 sleep 0.3
         done < $TMP_CSV_FILE_SORT
         printf "\n"
-        printf '%.0s=' {1..150}
+        printf '%.0s=' {1..170}
         printf "\n"
 }
 
@@ -295,7 +299,7 @@ function taskExec
         taskName=$1
         shift
         taskCmd="${*:-bash}"
-        TMP_TASKLIST_JSON=$(mkdtemp /tmp/dcostasklist-XXXXXX.json)
+        TMP_TASKLIST_JSON=$(mktemp /tmp/dcostasklist-XXXXXX.json)
         dcos task --json > $TMP_TASKLIST_JSON
         taskExist=`cat $TMP_TASKLIST_JSON | jq --arg tname $taskName '.[] | if(.name == $tname ) then .name else empty end' -r | wc -l`
         if [[ $taskExist -eq 0 ]]; then 
@@ -355,6 +359,7 @@ function switchCluster
         
         if [ "$#" -eq 0 ]; then
                 echo "Need Cluster name as input. Exiting ..."
+                dcos cluster list
                 exit 1
         fi
 
@@ -410,8 +415,8 @@ function deleteUsers
                 ls -la $usersFile
                 exit 1
         fi
-        for i in `cat users.list`; do 
-                echo $i
+        for i in `cat $usersFile`; do 
+                echo "Deleting user : $i"
                 curl -X DELETE -H "Authorization: Bearer $(dcos config show core.dcos_acs_token)" "$(dcos config show core.dcos_url)/acs/api/v1/users/$i" -d "{}"
         done
 }
