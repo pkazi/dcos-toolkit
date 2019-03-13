@@ -1,0 +1,67 @@
+{
+    "id": "/#NODENAME#",
+    "backoffFactor": 1.15,
+    "backoffSeconds": 1,
+    "constraints": [
+      [
+        "hostname",
+        "CLUSTER",
+        "#NODEHOSTIP#"
+      ]
+    ],
+    "container": {
+      "type": "DOCKER",
+      "volumes": [
+        {
+          "external": {
+            "name": "#VOLUMENAME#",
+            "provider": "dvdi",
+            "options": {
+              "dvdi/driver": "rexray"
+            }
+          },
+          "mode": "RW",
+          "containerPath": "/data"
+        }
+      ],
+      "docker": {
+        "image": "nexla/redis:latest",
+        "forcePullImage": false,
+        "privileged": false,
+        "parameters": []
+      }
+    },
+    "cpus": #NODECPU#,
+    "disk": 0,
+    "fetch": [],
+    "healthChecks": [],
+    "instances": 1,
+    "maxLaunchDelaySeconds": 3600,
+    "mem": #NODEMEM#,
+    "gpus": 0,
+    "networks": [
+      {
+        "mode": "host"
+      }
+    ],
+    "portDefinitions": [
+      {
+        "labels": {
+          "VIP_0": "/#NODEVIP#:#NODEPORT#"
+        },
+        "name": "#NODEVIP#",
+        "protocol": "tcp",
+        "port": #NODEPORT#
+      }
+    ],
+    "requirePorts": true,
+    "upgradeStrategy": {
+      "maximumOverCapacity": 0,
+      "minimumHealthCapacity": 0.5
+    },
+    "killSelection": "YOUNGEST_FIRST",
+    "unreachableStrategy": {
+      "inactiveAfterSeconds": 300,
+      "expungeAfterSeconds": 600
+    }
+  }
